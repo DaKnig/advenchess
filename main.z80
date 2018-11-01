@@ -1,0 +1,81 @@
+INCLUDE "hardware.inc"
+
+SECTION "Interrupt handlers",ROM0[$40]
+REPT $68 - $40
+	reti
+ENDR
+SECTION "rst38",ROM0[$38]
+REPT 8
+	rst $38
+ENDR
+
+SECTION "Header", ROM0[$100]
+EntryPoint:
+	ei
+	jp Start
+REPT $150 - $104
+	db 0
+ENDR
+
+numOfTiles EQU 6
+
+SECTION "Tiles", ROM0
+Tiles:
+INCBIN "assets/Tiles.bin",0,numOfTiles*16
+EndTiles:
+
+SECTION "Start", ROM0
+Start:
+	call Init
+
+
+.TerminateLoop
+	stop
+	jp .TerminateLoop
+
+Init:
+	ld hl, _VRAM + $0200
+	ld d, numOfTiles * 4
+	call Wait_VBlank
+	ld sp, Tiles
+.LoadTiles
+	di
+.LoadLoop
+REPT 2
+	pop bc
+	ld a,c
+	ld [hl+],a
+	ld a,b
+	ld [hl+],a
+ENDR
+	dec d
+	jp nz, .LoadLoop
+	ei
+;	ld sp, $FFFC
+.CleanBGMap
+	ld sp, _SCRN0 + $10+ $09 * $20
+	ld e,d
+	ld b,6
+.CleanLoop
+REPT 4
+	push de
+ENDR
+	dec b
+	db $40
+	jp nz, .CleanLoop
+	ld sp, $FFFC
+	ret
+
+Wait_VBlank:
+	;corrupts c and a
+.EnableVBlankInterrupt
+	ld c, LOW(rIE)
+	ld a, [c]
+	or a, IEF_VBLANK
+	ld [c], a
+.WaitLoop
+	halt
+	ld a, [rLY]
+    cp 144
+    jr c, .WaitLoop
+	ret

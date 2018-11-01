@@ -1,0 +1,4 @@
+about loading sprites during VBlank:
+	vsync is more than 1024 mcycles. this is ~14 tiles.
+	right now the code assumes there are less than 14 tiles to load.
+	so, one VBlank would be enough for that...
