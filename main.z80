@@ -1,12 +1,12 @@
 INCLUDE "hardware.inc"
 
-SECTION "Interrupt handlers",ROM0[$40]
-REPT $68 - $40
-	reti
-ENDR
 SECTION "rst38",ROM0[$38]
 REPT 8
 	rst $38
+ENDR
+SECTION "Interrupt handlers",ROM0[$40]
+REPT $68 - $40
+	reti
 ENDR
 
 SECTION "Header", ROM0[$100]
@@ -17,7 +17,7 @@ REPT $150 - $104
 	db 0
 ENDR
 
-numOfTiles EQU 6
+numOfTiles EQU 6 ; the number of tiles in Tiles.bin
 
 SECTION "Tiles", ROM0
 Tiles:
@@ -29,12 +29,11 @@ Start:
 	call Init
 
 
-.TerminateLoop
-	stop
-	jp .TerminateLoop
+
+	jp TerminateLoop
 
 Init:
-	ld hl, _VRAM + $0200
+	ld hl, _VRAM + $200
 	ld d, numOfTiles * 4
 	call Wait_VBlank
 	ld sp, Tiles
@@ -51,7 +50,6 @@ ENDR
 	dec d
 	jp nz, .LoadLoop
 	ei
-;	ld sp, $FFFC
 .CleanBGMap
 	ld sp, _SCRN0 + $10+ $09 * $20
 	ld e,d
@@ -61,7 +59,6 @@ REPT 4
 	push de
 ENDR
 	dec b
-	db $40
 	jp nz, .CleanLoop
 	ld sp, $FFFC
 	ret
@@ -76,6 +73,11 @@ Wait_VBlank:
 .WaitLoop
 	halt
 	ld a, [rLY]
-    cp 144
+    cp SCRN_Y
     jr c, .WaitLoop
 	ret
+
+TerminateLoop	;halts the machine
+	db $40
+	stop
+	jp TerminateLoop

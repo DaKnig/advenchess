@@ -1,0 +1,4 @@
+assets/font.bmp
+*.o
+bin/*
+.vscode/*
