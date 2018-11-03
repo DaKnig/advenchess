@@ -5,7 +5,7 @@ REPT 8
 	rst $38
 ENDR
 SECTION "Interrupt handlers",ROM0[$40]
-REPT $68 - $40
+REPT $100 - $40
 	reti
 ENDR
 
@@ -17,7 +17,7 @@ REPT $150 - $104
 	db 0
 ENDR
 
-numOfTiles EQU 6 ; the number of tiles in Tiles.bin
+numOfTiles EQU 10 ; the number of tiles in Tiles.bin
 
 SECTION "Tiles", ROM0
 Tiles:
@@ -26,21 +26,54 @@ EndTiles:
 
 SECTION "Start", ROM0
 Start:
+	call MakeRoom
 	call Init
-
 
 
 	jp TerminateLoop
 
+MakeRoom:
+;putWalls
+	ld a,"w"
+;top and bottom
+	ld hl, room+(3+1)+3*SCRN_VX_B
+REPT 6
+	ld [hl+], a
+ENDR
+	ld hl, room+(3+1)+(3+8)*SCRN_VX_B
+REPT 6
+	ld [hl+], a
+ENDR
+;sides
+	ld de, SCRN_VX_B
+	ld hl, room+3+(3+1)*SCRN_VX_B
+REPT 6
+	ld [hl], a
+	add hl, de
+ENDR
+	ld hl, room+(3+8)+(3+1)*SCRN_VX_B
+REPT 6
+	ld [hl], a
+	add hl, de
+ENDR
+;corners
+	ld a, "+"
+	ld [hl], a
+	ld [room+ 3+    3   *SCRN_VX_B], a
+	ld [room+(3+8)+ 3   *SCRN_VX_B], a
+	ld [room+ 3   +(3+8)*SCRN_VX_B], a
+	ret
+
+
 Init:
 	ld hl, _VRAM + $200
-	ld d, numOfTiles * 4
+	ld d, numOfTiles * 8
 	call Wait_VBlank
 	ld sp, Tiles
 .LoadTiles
 	di
 .LoadLoop
-REPT 2
+REPT 1
 	pop bc
 	ld a,c
 	ld [hl+],a
@@ -52,8 +85,8 @@ ENDR
 	ei
 .CleanBGMap
 	ld sp, _SCRN0 + $10+ $09 * $20
-	ld e,d
-	ld b,6
+	ld e, d
+	ld b, 6
 .CleanLoop
 REPT 4
 	push de
@@ -70,9 +103,10 @@ Wait_VBlank:
 	ld a, [c]
 	or a, IEF_VBLANK
 	ld [c], a
+	ld c, LOW(rLY)
 .WaitLoop
 	halt
-	ld a, [rLY]
+	ld a, [c]
     cp SCRN_Y
     jr c, .WaitLoop
 	ret
@@ -81,3 +115,12 @@ TerminateLoop	;halts the machine
 	db $40
 	stop
 	jp TerminateLoop
+
+SECTION "room",WRAM0
+
+room:	;a representation of the map in the memory
+;each cell could be one of the following:
+; w		- wall
+;' '	- free space
+; +		- corners
+	ds SCRN_VX_B * SCRN_VY_B
