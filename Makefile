@@ -18,6 +18,7 @@ all:	$(ROM)
 
 clean:
 	rm $(OBJDIR)/* $(BINDIR)/* -f -I
+	rm assets/Tiles.png -f -I
 
 $(OBJDIR)/%.o: %.z80
 	rgbasm $(ASM_FLAGS) -o $@ $<
@@ -28,3 +29,8 @@ $(ROM):	$(OBJS)
 
 run:	$(ROM)
 	$(EMU) $< &
+
+artwork: assets/Tiles.png
+
+assets/Tiles.png: assets/Tiles.bin
+	dazzlie decode -f gb_2bpp --layout "H8 V3" -i assets/Tiles.bin -o assets/Tiles.png
