@@ -17,84 +17,18 @@ REPT $150 - $104
 	db 0
 ENDR
 
-numOfTiles EQU 10 ; the number of tiles in Tiles.bin
-
-SECTION "Tiles", ROM0
-Tiles:
-INCBIN "assets/Tiles.bin",0,numOfTiles*16
-EndTiles:
 
 SECTION "Start", ROM0
 Start:
-	call MakeRoom
+	call Init_OAM
+	call Load_DMA_Loop
+	call InitRoom
 	call Init
+	call OAM_DMA
+	call Wait_VBlank
 
 
 	jp TerminateLoop
-
-MakeRoom:
-;putWalls
-	ld a,"w"
-;top and bottom
-	ld hl, room+(3+1)+3*SCRN_VX_B
-REPT 6
-	ld [hl+], a
-ENDR
-	ld hl, room+(3+1)+(3+8)*SCRN_VX_B
-REPT 6
-	ld [hl+], a
-ENDR
-;sides
-	ld de, SCRN_VX_B
-	ld hl, room+3+(3+1)*SCRN_VX_B
-REPT 6
-	ld [hl], a
-	add hl, de
-ENDR
-	ld hl, room+(3+8)+(3+1)*SCRN_VX_B
-REPT 6
-	ld [hl], a
-	add hl, de
-ENDR
-;corners
-	ld a, "+"
-	ld [hl], a
-	ld [room+ 3+    3   *SCRN_VX_B], a
-	ld [room+(3+8)+ 3   *SCRN_VX_B], a
-	ld [room+ 3   +(3+8)*SCRN_VX_B], a
-	ret
-
-
-Init:
-	ld hl, _VRAM + $200
-	ld d, numOfTiles * 8
-	call Wait_VBlank
-	ld sp, Tiles
-.LoadTiles
-	di
-.LoadLoop
-REPT 1
-	pop bc
-	ld a,c
-	ld [hl+],a
-	ld a,b
-	ld [hl+],a
-ENDR
-	dec d
-	jp nz, .LoadLoop
-	ei
-.CleanBGMap
-	ld sp, _SCRN0 + $10+ $09 * $20
-	ld e, d
-	ld b, 6
-.CleanLoop
-REPT 4
-	push de
-ENDR
-	dec b
-	jp nz, .CleanLoop
-	ld sp, $FFFC
-	ret
 
 Wait_VBlank:
 	;corrupts c and a
@@ -113,8 +47,8 @@ Wait_VBlank:
 
 TerminateLoop	;halts the machine
 	db $40
-	stop
-	jp TerminateLoop
+	halt
+	jr TerminateLoop
 
 SECTION "room",WRAM0
 
@@ -124,3 +58,23 @@ room:	;a representation of the map in the memory
 ;' '	- free space
 ; +		- corners
 	ds SCRN_VX_B * SCRN_VY_B
+
+SECTION "Shadow OAM",WRAM0,ALIGN[8]
+shadow_oam:
+	ds 160
+
+SECTION "OAM loop, source",ROM0
+DMA_Source:
+	ld a, HIGH(shadow_oam)
+	ldh  [rDMA], a
+	ld  a, $28
+.oam_loop_wait:
+	dec a
+	jr  nz, .oam_loop_wait
+	ret
+.end:
+
+SECTION "OAM loop, destinaton",HRAM
+OAM_DMA:
+	ds DMA_Source.end - DMA_Source
+.end:

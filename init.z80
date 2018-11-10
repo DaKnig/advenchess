@@ -1,0 +1,118 @@
+INCLUDE "hardware.inc"
+
+numOfTiles EQU 11 ; the number of tiles in Tiles.bin
+
+SECTION "Tiles", ROM0
+Tiles:
+INCBIN "assets/Tiles.bin",0,numOfTiles*16
+EndTiles:
+
+SECTION "Init", ROM0
+Init_OAM:
+	ld hl, rLCDC
+	ld [hl], LCDCF_ON|LCDCF_BG8000|LCDCF_OBJON|LCDCF_BGON
+.init_Player
+	ld hl, shadow_oam
+	ld [hl], 16 + 3*8 + 4*8
+	inc l	; inc l==inc hl		because alignment
+	ld [hl], 8 + 3*8 + 4*8
+	inc l
+	ld [hl], $23
+	inc l
+	ld [hl], OAMF_PAL0	
+	inc l
+	ld b, $FF
+	ld a, 160
+.loop
+	ld [hl], b
+	inc l
+	cp a, l
+	jr nz, .loop
+	ret
+
+InitRoom:
+;putWalls
+	ld a, $26		;	- tile
+;top and bottom
+	ld hl, room+(3+1)+3*SCRN_VX_B
+	ld b, 6
+.horiz_loop_1:
+	ld [hl+], a
+	dec b
+	jr nz, .horiz_loop_1
+	ld hl, room+(3+1)+(3+8)*SCRN_VX_B
+	ld b, 6
+.horiz_loop_2:
+	ld [hl+], a
+	dec b
+	jr nz, .horiz_loop_2
+;sides
+	ld a, $2A	;	| tile
+	ld de, SCRN_VX_B
+	ld hl, room+3+(3+1)*SCRN_VX_B
+REPT 6
+	ld [hl], a
+	add hl, de
+ENDR
+	ld hl, room+(3+8)+(3+1)*SCRN_VX_B
+REPT 6
+	ld [hl], a
+	add hl, de
+ENDR
+;corners
+	ld a, $29	;	+ tile
+	ld [hl], a
+	ld [room+ 3+    3   *SCRN_VX_B], a
+	ld [room+(3+8)+ 3   *SCRN_VX_B], a
+	ld [room+ 3   +(3+8)*SCRN_VX_B], a
+	ret
+
+
+Load_DMA_Loop:
+	ld bc, (OAM_DMA.end-OAM_DMA)*$0100+LOW(OAM_DMA.end)
+		;ld b, (OAM_DMA.end-OAM_DMA)
+		;ld c, LOW(OAM_DMA.end)
+	ld hl, DMA_Source.end
+.loop
+	ld a, [hl-]
+	ld [c], a
+	dec c
+	dec b
+	jr nz, .loop
+	ld a, [hl]
+	ld [c], a
+	ret
+
+Init:
+	ld hl, rOBP0
+	ld [hl], %11100100
+
+.LoadTiles
+	ld hl, _VRAM + $200
+	ld d, numOfTiles * 2
+	call Wait_VBlank
+	ld sp, Tiles
+	di
+.LoadLoop
+REPT 4
+	pop bc
+	ld a,c
+	ld [hl+],a
+	ld a,b
+	ld [hl+],a
+ENDR
+	dec d
+	jp nz, .LoadLoop
+
+.ClearBGMap	
+	ld e, d		;	ld de, $00
+	ld sp, _SCRN0 + $10+ $09 * $20
+	ld a, 5
+.CleanLoop
+REPT 5
+	push de
+ENDR
+	dec a
+	jp nz, .CleanLoop
+	ld sp, $FFFC
+	reti
