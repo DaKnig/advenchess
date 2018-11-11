@@ -86,6 +86,10 @@ Load_DMA_Loop:
 Init:
 	ld hl, rOBP0
 	ld [hl], %11100100
+	;Enable VBlank interrupt
+	ldh a, [LOW(rIE)]
+	or a, IEF_VBLANK
+	ldh [LOW(rIE)], a
 
 .LoadTiles
 	ld hl, _VRAM + $200

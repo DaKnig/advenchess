@@ -37,13 +37,13 @@ Start:
 
 	jp TerminateLoop
 
+CopyBGMap:	;copies "shadow map" into vram
+;	ld hl,
+;	call Wait_VBlank
+
+
 Wait_VBlank:
-	;corrupts c and a
-.EnableVBlankInterrupt
-	ld c, LOW(rIE)
-	ld a, [c]
-	or a, IEF_VBLANK
-	ld [c], a
+	;corrupts c and a, assumes the interrupt is enabled
 	ld c, LOW(rLY)
 .WaitLoop
 	halt
