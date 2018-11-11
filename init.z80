@@ -69,9 +69,9 @@ ENDR
 
 
 Load_DMA_Loop:
-	ld bc, (OAM_DMA.end-OAM_DMA)*$0100+LOW(OAM_DMA.end)
-		;ld b, (OAM_DMA.end-OAM_DMA)
-		;ld c, LOW(OAM_DMA.end)
+	ld bc, (hOAM_DMA.end-hOAM_DMA)*$0100+LOW(hOAM_DMA.end)
+		;ld b, (hOAM_DMA.end-hOAM_DMA)
+		;ld c, LOW(hOAM_DMA.end)
 	ld hl, DMA_Source.end
 .loop
 	ld a, [hl-]

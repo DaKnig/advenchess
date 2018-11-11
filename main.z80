@@ -17,6 +17,13 @@ REPT $150 - $104
 	db 0
 ENDR
 
+SECTION "OAM DMA starter",ROM0
+OAM_DMA:
+	di
+	push af
+	call hOAM_DMA
+	pop af
+	reti
 
 SECTION "Start", ROM0
 Start:
@@ -24,7 +31,7 @@ Start:
 	call Load_DMA_Loop
 	call InitRoom
 	call Init
-	call OAM_DMA
+	call hOAM_DMA
 	call Wait_VBlank
 
 
@@ -53,10 +60,7 @@ TerminateLoop	;halts the machine
 SECTION "room",WRAM0
 
 room:	;a representation of the map in the memory
-;each cell could be one of the following:
-; w		- wall
-;' '	- free space
-; +		- corners
+;each cell could be one of the tiles:
 	ds SCRN_VX_B * SCRN_VY_B
 
 SECTION "Shadow OAM",WRAM0,ALIGN[8]
@@ -75,6 +79,6 @@ DMA_Source:
 .end:
 
 SECTION "OAM loop, destinaton",HRAM
-OAM_DMA:
+hOAM_DMA:
 	ds DMA_Source.end - DMA_Source
 .end:
