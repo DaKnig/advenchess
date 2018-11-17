@@ -33,14 +33,44 @@ Start:
 	call Init
 	call hOAM_DMA
 	call Wait_VBlank
+	call CopyBGMap
 
 
 	jp TerminateLoop
 
 CopyBGMap:	;copies "shadow map" into vram
-;	ld hl,
-;	call Wait_VBlank
+.init:
+	call Wait_VBlank
+	ld hl, room
+	ld bc, _SCRN0
+	ld d, HIGH(32*32) + HIGH(_SCRN0)
+.startLoop:
+	ld e, -64
+.loop1:
+REPT 2
+	ld a, [hl+]		;2
+	ld [bc], a		;2
+	inc c			;1
+ENDR
+	inc e			;1
+	jr nz, .loop1	;3
+	call Wait_VBlank
+	ld c, l
+.loop2
+REPT 2
+	ld a, [hl+]		;2
+	ld [bc], a		;2
+	inc c			;1
+ENDR
+	jr nz, .loop2	;3
+	call Wait_VBlank
+	ld c, l
+	inc b			;1
+	ld a, d			;1
+	cp b			;1
+	jr nz, .startLoop	;3
 
+	ret
 
 Wait_VBlank:
 	;corrupts c and a, assumes the interrupt is enabled
@@ -57,7 +87,7 @@ TerminateLoop	;halts the machine
 	halt
 	jr TerminateLoop
 
-SECTION "room",WRAM0
+SECTION "room",WRAM0,ALIGN[8]
 
 room:	;a representation of the map in the memory
 ;each cell could be one of the tiles:

@@ -5,7 +5,7 @@ numOfTiles EQU 11 ; the number of tiles in Tiles.bin
 SECTION "Tiles", ROM0
 Tiles:
 INCBIN "assets/Tiles.bin",0,numOfTiles*16
-EndTiles:
+.end:
 
 SECTION "Init", ROM0
 Init_OAM:
@@ -31,6 +31,17 @@ Init_OAM:
 	ret
 
 InitRoom:
+;clean the room
+	ld b,0
+	ld hl,room
+	ld d,HIGH(32*32+room)
+.clear_loop
+	ld [hl],b
+	inc hl
+	ld a, h
+	cp d
+	jr nz, .clear_loop
+
 ;putWalls
 	ld a, $26		;	- tile
 ;top and bottom
@@ -84,8 +95,8 @@ Load_DMA_Loop:
 	ret
 
 Init:
-	ld hl, rOBP0
-	ld [hl], %11100100
+	ld a, %11100100
+	ldh [rOBP0], a
 	;Enable VBlank interrupt
 	ldh a, [LOW(rIE)]
 	or a, IEF_VBLANK
