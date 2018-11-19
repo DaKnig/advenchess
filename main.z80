@@ -108,6 +108,22 @@ DMA_Source:
 	ret
 .end:
 
+SECTION "Object info",WRAM0
+I = 0
+REPT 40
+J EQUS STRCAT("Obj", STRSUB("{I}", 2, STRLEN("{I}") - 1))
+J:	;	that should produce things like ObjA2
+PURGE J
+.type:		ds 1
+.x:			ds 1
+.y:			ds 1
+.status:	ds 1
+.OAMptr:	ds 2
+I = I + 1
+ENDR
+PURGE I
+numOfObjects:	ds 1
+
 SECTION "OAM loop, destinaton",HRAM
 hOAM_DMA:
 	ds DMA_Source.end - DMA_Source

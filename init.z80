@@ -9,6 +9,8 @@ INCBIN "assets/Tiles.bin",0,numOfTiles*16
 
 SECTION "Init", ROM0
 Init_OAM:
+	ld a, 1
+	ld [numOfObjects], a
 	ld hl, rLCDC
 	ld [hl], LCDCF_ON|LCDCF_BG8000|LCDCF_OBJON|LCDCF_BGON
 .init_Player
@@ -97,6 +99,7 @@ Load_DMA_Loop:
 Init:
 	ld a, %11100100
 	ldh [rOBP0], a
+	ldh [rBGP], a
 	;Enable VBlank interrupt
 	ldh a, [LOW(rIE)]
 	or a, IEF_VBLANK
