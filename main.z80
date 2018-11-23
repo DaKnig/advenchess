@@ -32,7 +32,6 @@ Start:
 	call InitRoom
 	call Init
 	call hOAM_DMA
-	call Wait_VBlank
 	call CopyBGMap
 
 
