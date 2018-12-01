@@ -38,7 +38,7 @@ Start:
 
 	jp TerminateLoop
 
-GetKeys:	;returns the input keys in register a
+GetKeys:	;returns the input keys in register a, inverted
 ;overwrites hl, f
 	ld hl, rP1
 	ld [hl], $20	;bit 4 is low, select direction keys
