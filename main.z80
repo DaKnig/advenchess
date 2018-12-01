@@ -38,6 +38,11 @@ Start:
 
 	jp TerminateLoop
 
+PlayerAI:	;overwrites all regs..
+	call GetKeys
+	;;;....
+	ret 	;profit!
+
 GetKeys:	;returns the input keys in register a, inverted
 ;overwrites hl, f
 	ld hl, rP1
@@ -129,7 +134,7 @@ DMA_Source:
 
 SECTION "Object info",WRAM0
 I = 0
-REPT 40
+REPT 32
 J EQUS STRCAT("Obj", STRSUB("{I}", 2, STRLEN("{I}") - 1))
 J:	;	that should produce things like ObjA2
 PURGE J
