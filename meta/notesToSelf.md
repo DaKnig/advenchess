@@ -4,7 +4,7 @@ right now the code assumes there are less than 14 tiles to load.
 so, one VBlank would be enough for that...
 ## about entry point:
 instead of jumping to start, and then calling all the init
-things,	should use ROP - 'ld sp, Table; ret' where Table is an
+things,	should use ROP - `ld sp, Table; ret` where Table is an
 array of pointers to all the init functions, and then to a small
 piece that just says `ld sp, stack_pos; jp start`
 ## number of objects:
