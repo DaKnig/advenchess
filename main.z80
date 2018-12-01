@@ -34,8 +34,28 @@ Start:
 	call hOAM_DMA
 	call CopyBGMap
 
+	call GetKeys
 
 	jp TerminateLoop
+
+GetKeys:	;returns the input keys in register a
+;overwrites hl, f
+	ld hl, rP1
+	ld [hl], $20	;bit 4 is low, select direction keys
+	push bc			;4
+	ld a, $0F		;2
+	and a, [hl]		;read direction keys
+	ld [hl], $10	;bit 5 is low, select button keys
+	swap a			;2
+	pop bc			;3
+	push af			;4
+	ld a, $0F
+	and a, [hl]
+	ld [hl], $30 	;as required by the manual
+	pop hl
+	add a, h
+
+	ret
 
 CopyBGMap:	;copies "shadow map" into vram
 .init:
