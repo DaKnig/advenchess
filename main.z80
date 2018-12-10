@@ -104,7 +104,7 @@ PlayerAI:	;overwrites all regs...
 .checkFreeSpace:
 	ld b, h
 	ld c, l	;h,l = b,c = y,x
-	
+
 	dec h
 	dec h
 	ld a, h
@@ -156,13 +156,13 @@ UpdateOAM:	; ;arguments: hl=objx ; destroys af, bc, d; updates one object in (sh
 	inc l
 	ld h, [hl]
 	ld l, d	;ld hl, [Objx.OAMptr]
-	
+
 	add a, a
 	add a, a
 	add a, a
 	ld [hl+], a	;load y
 	;notes to self- should change that into an actual animation thing
-	
+
 	ld a, c
 	add a, a
 	add a, a
