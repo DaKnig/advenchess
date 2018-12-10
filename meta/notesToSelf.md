@@ -14,3 +14,10 @@ increase code speed
 the player AI would only need to change the input keys function
 to work with multiplayer on sgb. link cable should also be
 possible...
+## animations:
+should add some sort of animation, instead of copying directly
+from the object table to OAM
+##movement
+should change the "PlayerAI" to just call the movement functions
+of the player's type, instead of actually moving the player. that
+allows things like changing the player character

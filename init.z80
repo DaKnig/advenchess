@@ -8,20 +8,34 @@ INCBIN "assets/Tiles.bin",0,numOfTiles*16
 .end:
 
 SECTION "Init", ROM0
-Init_OAM:
+Init_Object_Table
 	ld a, 1
 	ld [numOfObjects], a
+
+	ld hl, Obj0.type
+	ld [hl], 0		;0 for player
+	inc l	;ld hl, Obj0.x
+	ld [hl], 3 	;x is 8-pixels offset
+	inc l	;ld hl, Obj0.y
+	ld [hl], 3	;y is offset by 16
+	inc l	;ld hl, Obj0.status
+	ld [hl], OAMF_PAL0
+	inc l
+	ld [hl], LOW(shadow_oam) ;the player is the first object
+	inc l
+	ld [hl], HIGH(shadow_oam)
+	ld hl, Obj0
+	call UpdateOAM
+	jp OAM_DMA
+Init_OAM:
 	ld hl, rLCDC
 	ld [hl], LCDCF_ON|LCDCF_BG8000|LCDCF_OBJON|LCDCF_BGON
 .init_Player
-	ld hl, shadow_oam
-	ld [hl], 16 + 3*8 + 4*8
-	inc l	; inc l==inc hl		because alignment
-	ld [hl], 8 + 3*8 + 4*8
-	inc l
-	ld [hl], $23
+	ld hl, shadow_oam + 2	;OAM entry 0, byte 2 (tile)
+	ld [hl], $23		;player tile
 	inc l
 	ld [hl], OAMF_PAL0	
+	
 	inc l
 	ld b, $FF
 	ld a, 160

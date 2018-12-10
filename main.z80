@@ -33,33 +33,189 @@ Start:
 	call Init
 	call hOAM_DMA
 	call CopyBGMap
-
+	call Init_Object_Table
 	call GetKeys
 
+.GameLoop:
+	call PlayerAI
+	call OAM_DMA
+	halt
+	halt
+	jr .GameLoop
 	jp TerminateLoop
 
-PlayerAI:	;overwrites all regs..
-	call GetKeys
-	;;;....
-	ret 	;profit!
+PlayerAI:	;overwrites all regs...
+	call Wait_VBlank
+	ld hl, Obj0.x
+	ld a, [hl+]
+	and a, %00011111
+	ld h, [hl]
+	ld l, a
+	ld a, h
+	and a, %00011111
+	ld h, a
+.wait_for_input:
+	push hl
+	call GetKeys	;a=keys
+	pop hl
+
+	cp a, $FF
+	jr nz, .PressedSomething
+	halt
+	jr .wait_for_input
+.PressedSomething:
+	add a, a
+	jr c, .DownNotPressed
+	inc h
+	jp .checkFreeSpace
+.DownNotPressed
+	add a, a
+	jr c, .UpNotPressed
+	dec h
+	jp .checkFreeSpace
+.UpNotPressed
+
+	add a, a
+	jr c, .LeftNotPressed
+	dec l
+	jp .checkFreeSpace
+.LeftNotPressed
+	add a, a
+	jr c, .RightNotPressed
+	inc l
+	jp .checkFreeSpace
+.RightNotPressed
+
+	add a, a
+	jr nc, .pressedStart
+	add a, a
+	jr nc, .pressedSelect
+	add a, a
+	jr nc, .pressedB
+;	jr .pressedA		;uncomment together with PauseMenu
+.pressedStart:
+	;call PauseMenu
+.pressedA:
+.pressedB:
+.pressedSelect:
+.pressedNothing:
+	halt
+	jp .wait_for_input
+.checkFreeSpace:
+	ld b, h
+	ld c, l	;h,l = b,c = y,x
+	
+	dec h
+	dec h
+	ld a, h
+	and %00011111
+	ld h, a
+	dec l	;y offset = 16 = 2*8, x offset = 8 = 1*8
+	ld a, l
+	and %00011111
+	ld l, a
+
+	ld a, l
+	ld l,h
+	ld h,0
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	add hl, hl
+	add a, l
+	ld l, a		;hl = 32y + x now
+	ld a, HIGH(room)
+	add a, h
+	ld h, a
+
+	ld a, [hl]
+	and a, a
+	jr z, .Move
+	jr nz, .DontMove
+
+.DontMove:
+	;animate failure, failure feedback
+	jp PlayerAI
+.Move:
+	ld hl, Obj0.x
+	ld [hl], c
+	inc l		;ld objx.y
+	ld [hl], b
+	ld l, LOW(Obj0)
+UpdateOAM:	; ;arguments: hl=objx ; destroys af, bc, d; updates one object in (shadow)oam
+	inc hl	;ld hl, Objx.x
+	ld c, [hl]
+	inc l	;ld hl, Objx.y
+	ld a, [hl+]
+			;ld hl, Objx.status
+	ld b, [hl]
+	inc l
+	;ld hl, Objx.OAMptr
+	ld d, [hl]
+	inc l
+	ld h, [hl]
+	ld l, d	;ld hl, [Objx.OAMptr]
+	
+	add a, a
+	add a, a
+	add a, a
+	ld [hl+], a	;load y
+	;notes to self- should change that into an actual animation thing
+	
+	ld a, c
+	add a, a
+	add a, a
+	add a, a
+	ld [hl+], a	;load x
+	inc l
+
+	ld a, b
+	add a, a
+	add a, a
+	add a, a
+	ld [hl], a	;load status
+	ret
+
 
 GetKeys:	;returns the input keys in register a, inverted
-;overwrites hl, f
-	ld hl, rP1
-	ld [hl], $20	;bit 4 is low, select direction keys
-	push bc			;4
-	ld a, $0F		;2
-	and a, [hl]		;read direction keys
-	ld [hl], $10	;bit 5 is low, select button keys
-	swap a			;2
-	pop bc			;3
-	push af			;4
-	ld a, $0F
-	and a, [hl]
-	ld [hl], $30 	;as required by the manual
-	pop hl
-	add a, h
+;;overwrites hl, af
+;	ld hl, rP1
+;	ld [hl], $20	;bit 4 is low, select direction keys
+;	push bc			;4
+;	ld a, $0F		;2
+;	and a, [hl]		;read direction keys
+;	ld [hl], $10	;bit 5 is low, select button keys
+;	swap a			;2
+;	pop bc			;3
+;	push af			;4
+;	ld a, $0F
+;	and a, [hl]
+;	ld [hl], $30 	;as required by the manual
+;	pop hl
+;	add a, h
 
+;overwrites bc,af
+	ld c, LOW(rP1)
+	ld a, $20	;bit 4 is low, select direction keys
+	ld [c], a
+rept 5
+	ld a, [c]
+endr
+	and a, $0F
+	swap a
+	ld b, a
+	ld a, $10	;bit 5 is low, select button keys
+	ld [c], a
+rept 6
+	ld a, [c]
+endr
+	and a, $0F
+	or a, b
+	ld b, a
+	ld a, $30
+	ld [c], a
+	ld a, b
 	ret
 
 CopyBGMap:	;copies "shadow map" into vram
@@ -132,7 +288,7 @@ DMA_Source:
 	ret
 .end:
 
-SECTION "Object info",WRAM0
+SECTION "Object info",WRAM0	;object table
 I = 0
 REPT 32
 J EQUS STRCAT("Obj", STRSUB("{I}", 2, STRLEN("{I}") - 1))
@@ -141,8 +297,9 @@ PURGE J
 .type:		ds 1
 .x:			ds 1
 .y:			ds 1
-.status:	ds 1
-.OAMptr:	ds 2
+.status:	ds 1 ;	attributes etc. for the OAM
+.OAMptr:	ds 2 ;	points to shadow_oam
+			ds 2 ;	padding
 I = I + 1
 ENDR
 PURGE I
