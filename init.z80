@@ -35,7 +35,7 @@ Init_OAM:
 	ld [hl], $23		;player tile
 	inc l
 	ld [hl], OAMF_PAL0	
-	
+
 	inc l
 	ld b, $FF
 	ld a, 160
