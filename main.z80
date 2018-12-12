@@ -334,11 +334,11 @@ rand:	;returns a=random
 	ld a, $fa
 	add a, c
 	ld c, a
-	
+
 	ld a, $d3
 	adc a, b
 	ld b, a
-	
+
 	ld a, $44
 	adc a, e
 	ld e, a
