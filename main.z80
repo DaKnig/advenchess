@@ -309,3 +309,57 @@ SECTION "OAM loop, destinaton",HRAM
 hOAM_DMA:
 	ds DMA_Source.end - DMA_Source
 .end:
+
+SECTION "rand",rom0
+rand:	;returns a=random
+	; x[i+1] = x[i] * 0101 0101 + 0a44 d3fa
+
+	push hl
+	push bc
+	push de
+	ld hl, randstate
+.multiplication
+	ld a, [hl+]	;a=Byte0
+	ld c, a
+	add a, [hl]	;a+=Byte1
+	ld b, a
+	inc hl
+	add a, [hl]	;a+=Byte2
+	ld e, a
+	inc hl
+	add a, [hl]	;a+=Byte3
+	ld d, a
+	;now [randstate]==debc
+.addition
+	ld a, $fa
+	add a, c
+	ld c, a
+	
+	ld a, $d3
+	adc a, b
+	ld b, a
+	
+	ld a, $44
+	adc a, e
+	ld e, a
+
+	ld a, $0a
+	adc a, d
+	ld d, e
+.storage
+	ld [hl], d
+	dec hl
+	ld [hl], e
+	dec hl
+	ld [hl], b
+	dec hl
+	ld [hl], c
+	ld a, d
+	pop de
+	pop bc
+	pop hl
+	ret
+
+SECTION "Random seed", wram0
+randstate:
+	ds 4

@@ -17,7 +17,9 @@ possible...
 ## animations:
 should add some sort of animation, instead of copying directly
 from the object table to OAM
-##movement
+## movement
 should change the "PlayerAI" to just call the movement functions
 of the player's type, instead of actually moving the player. that
 allows things like changing the player character
+## random init
+should init the seed of the rng
