@@ -1,3 +1,6 @@
+t_Player	EQU 0
+t_Bat		EQU 1
+
 INCLUDE "hardware.inc"
 
 SECTION "rst38",ROM0[$38]
@@ -25,6 +28,11 @@ OAM_DMA:
 	pop af
 	reti
 
+SECTION "Tile Table", rom0, align[8]
+TileTable:
+tile_player:db $23	;for the player, as the first object
+tile_bat:	db $21	;for now, until I have an actual tile for a bat
+
 SECTION "Start", ROM0
 Start:
 	call Init_OAM
@@ -36,13 +44,107 @@ Start:
 	call Init_Object_Table
 	call GetKeys
 
+	ld b, t_Bat
+	ld c, $FF
+	ld d, c
+	call Construct
 .GameLoop:
 	call PlayerAI
+	ld hl, Obj1
+	call BatAI
 	call OAM_DMA
 	halt
 	halt
 	jr .GameLoop
 	jp TerminateLoop
+
+Construct:	;arguments: b=type, c=x, d=y
+	;for x,y use an invalid number for random placement
+	ld a, [numOfObjects]
+	add a, a
+	add a, a
+	add a, a
+	add a, low(ObjTable) + Obj0.type-Obj0
+	ld l, a
+	ld h, high(ObjTable)
+	;	ld hl, Objx.type
+	push hl
+
+	ld [hl], b
+	inc l	;Objx.type = type
+
+	ld a, c
+	cp a, 32
+	jr c, .valid_x
+	call rand
+	and a, $1F
+.valid_x:
+	ld [hl+], a
+
+	ld a, d
+	cp a, 32
+	jr c, .valid_y
+	call rand
+	and a, $1F
+.valid_y:
+	ld [hl+], a
+
+;load status
+	ld [hl], 0
+	inc l
+;init tile by type - tile table
+	push hl	;points to Objx.OAMptr
+	ld l, b
+	ld h, high(TileTable)	;hl = &TileTable[type]
+	ld b, [hl]				;b = TileTable[type]
+;*(numOfObjects)++
+	ld hl, numOfObjects
+	ld a, [hl]
+	inc [hl]
+;init OAMptr
+	add a, a
+	add a, a	;each OAM entry is 4 bytes
+	pop hl
+	ld [hl+], a
+	ld [hl], high(shadow_oam)
+;init tile
+	ld h, [hl]
+	add a, 2	;byte 2 in OAM is the tile
+	ld l, a		;hl = &Objx.OAMptr->tile
+	ld [hl], b	;Objx.OAMptr->tile = TileTable[type]
+
+	pop hl
+	call UpdateOAM
+	call OAM_DMA
+	ret
+
+BatAI:		;arguments: hl=Objx
+;destroys a
+	inc l;	ld hl, Objx.x
+	call rand
+	and a, %11000000
+	add a, a	; 00: nc, z. 01: nc, z. 10: c, z. 11: c, nz
+	jr nc, .moveVer
+.moveHoriz:
+	jr z, .moveRight
+.moveLeft:
+	dec [hl]	;*Objx.x --
+	db $3e
+.moveRight:
+	inc [hl]	;*Objx.y ++
+	jr .decAndUpdate
+.moveVer:
+	inc l		;ld hl, Objx.y
+	jr z, .moveUp
+.moveDown:
+	inc [hl]	;*Objx.y ++
+	db $3e
+.moveUp:
+	dec [hl]	;*Objx.y --
+	dec l
+.decAndUpdate
+	dec l		;hl = Objx = Objx.y-2
+	jp UpdateOAM
 
 PlayerAI:	;overwrites all regs...
 	call Wait_VBlank
@@ -144,7 +246,8 @@ PlayerAI:	;overwrites all regs...
 	ld [hl], b
 	ld l, LOW(Obj0)
 UpdateOAM:	; ;arguments: hl=objx ; destroys af, bc, d; updates one object in (shadow)oam
-	inc hl	;ld hl, Objx.x
+	;note- doesn't update the tile.
+	inc l	;ld hl, Objx.x
 	ld c, [hl]
 	inc l	;ld hl, Objx.y
 	ld a, [hl+]
@@ -288,7 +391,8 @@ DMA_Source:
 	ret
 .end:
 
-SECTION "Object info",WRAM0	;object table
+SECTION "Object info",WRAM0,ALIGN[3]	;object table
+ObjTable:
 I = 0
 REPT 32
 J EQUS STRCAT("Obj", STRSUB("{I}", 2, STRLEN("{I}") - 1))
@@ -312,7 +416,7 @@ hOAM_DMA:
 
 SECTION "rand",rom0
 rand:	;returns a=random
-	; x[i+1] = x[i] * 0101 0101 + 0a44 d3fa
+	; x[i+1] = x[i] * 0101 0101 + ce44 d3fb
 
 	push hl
 	push bc
@@ -331,7 +435,7 @@ rand:	;returns a=random
 	ld d, a
 	;now [randstate]==debc
 .addition
-	ld a, $fa
+	ld a, $fb
 	add a, c
 	ld c, a
 
@@ -343,7 +447,7 @@ rand:	;returns a=random
 	adc a, e
 	ld e, a
 
-	ld a, $0a
+	ld a, $ce
 	adc a, d
 	ld d, e
 .storage
