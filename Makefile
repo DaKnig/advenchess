@@ -3,8 +3,8 @@ BINDIR := bin
 
 name := main
 
-SRCS := $(name).z80 init.z80
-OBJS := $(OBJDIR)/$(name).o $(OBJDIR)/init.o
+SRCS := rng.z80 $(name).z80 init.z80
+OBJS := $(OBJDIR)/rng.o $(OBJDIR)/$(name).o $(OBJDIR)/init.o
 
 EMU := wine ~/prog/bgb/bgb.exe
 

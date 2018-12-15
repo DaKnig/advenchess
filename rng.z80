@@ -1,0 +1,53 @@
+SECTION "rand",rom0
+rand:	;returns a=random
+	; x[i+1] = x[i] * 0101 0101 + ce44 d3fb
+
+	push hl
+	push bc
+	push de
+	ld hl, randstate
+.multiplication
+	ld a, [hl+]	;a=Byte0
+	ld c, a
+	add a, [hl]	;a+=Byte1
+	ld b, a
+	inc hl
+	add a, [hl]	;a+=Byte2
+	ld e, a
+	inc hl
+	add a, [hl]	;a+=Byte3
+	ld d, a
+	;now [randstate]==debc
+.addition
+	ld a, $fb
+	add a, c
+	ld c, a
+
+	ld a, $d3
+	adc a, b
+	ld b, a
+
+	ld a, $44
+	adc a, e
+	ld e, a
+
+	ld a, $ce
+	adc a, d
+	ld d, e
+.storage
+	ld [hl], d
+	dec hl
+	ld [hl], e
+	dec hl
+	ld [hl], b
+	dec hl
+	ld [hl], c
+	ld a, d
+	pop de
+	pop bc
+	pop hl
+	ret
+
+SECTION "Random seed", wram0
+randstate:
+	ds 4
