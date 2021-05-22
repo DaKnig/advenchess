@@ -142,7 +142,7 @@ BatAI:		;arguments: hl=Objx
 .moveUp:
 	dec [hl]	;*Objx.y --
 	dec l
-.decAndUpdate
+.decAndUpdate:
 	dec l		;hl = Objx = Objx.y-2
 	jp UpdateOAM
 
@@ -170,23 +170,23 @@ PlayerAI:	;overwrites all regs...
 	jr c, .DownNotPressed
 	inc h
 	jp .checkFreeSpace
-.DownNotPressed
+.DownNotPressed:
 	add a, a
 	jr c, .UpNotPressed
 	dec h
 	jp .checkFreeSpace
-.UpNotPressed
+.UpNotPressed:
 
 	add a, a
 	jr c, .LeftNotPressed
 	dec l
 	jp .checkFreeSpace
-.LeftNotPressed
+.LeftNotPressed:
 	add a, a
 	jr c, .RightNotPressed
 	inc l
 	jp .checkFreeSpace
-.RightNotPressed
+.RightNotPressed:
 
 	add a, a
 	jr nc, .pressedStart
@@ -339,7 +339,7 @@ ENDR
 	jr nz, .loop1	;3
 	call Wait_VBlank
 	ld c, l
-.loop2
+.loop2:
 REPT 2
 	ld a, [hl+]		;2
 	ld [bc], a		;2
@@ -358,14 +358,14 @@ ENDR
 Wait_VBlank:
 	;corrupts c and a, assumes the interrupt is enabled
 	ld c, LOW(rLY)
-.WaitLoop
+.WaitLoop:
 	halt
 	ld a, [c]
     cp SCRN_Y
     jr c, .WaitLoop
 	ret
 
-TerminateLoop	;halts the machine
+TerminateLoop:	;halts the machine
 	db $40
 	halt
 	jr TerminateLoop

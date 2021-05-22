@@ -17,8 +17,8 @@ ASM_FLAGS := -E -p 0xFF
 all:	$(ROM)
 
 clean:
-	rm $(OBJDIR)/* $(BINDIR)/* -f -I
-	rm assets/Tiles.png -f -I
+	rm $(OBJDIR)/* $(BINDIR)/* -rf
+	rm assets/Tiles.png -f
 
 $(OBJDIR)/%.o: %.z80
 	rgbasm $(ASM_FLAGS) -o $@ $<

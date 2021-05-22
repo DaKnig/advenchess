@@ -8,7 +8,7 @@ INCBIN "assets/Tiles.bin",0,numOfTiles*16
 .end:
 
 SECTION "Init", ROM0
-Init_Object_Table
+Init_Object_Table:
 	ld a, 1
 	ld [numOfObjects], a
 
@@ -30,16 +30,16 @@ Init_Object_Table
 Init_OAM:
 	ld hl, rLCDC
 	ld [hl], LCDCF_ON|LCDCF_BG8000|LCDCF_OBJON|LCDCF_BGON
-.init_Player
+.init_Player:
 	ld hl, shadow_oam + 2	;OAM entry 0, byte 2 (tile)
 	ld [hl], $23		;player tile
 	inc l
-	ld [hl], OAMF_PAL0	
+	ld [hl], OAMF_PAL0
 
 	inc l
 	ld b, $FF
 	ld a, 160
-.loop
+.loop:
 	ld [hl], b
 	inc l
 	cp a, l
@@ -51,7 +51,7 @@ InitRoom:
 	ld b,0
 	ld hl,room
 	ld d,HIGH(32*32+room)
-.clear_loop
+.clear_loop:
 	ld [hl],b
 	inc hl
 	ld a, h
@@ -100,7 +100,7 @@ Load_DMA_Loop:
 		;ld b, (hOAM_DMA.end-hOAM_DMA)
 		;ld c, LOW(hOAM_DMA.end)
 	ld hl, DMA_Source.end
-.loop
+.loop:
 	ld a, [hl-]
 	ld [c], a
 	dec c
@@ -119,13 +119,13 @@ Init:
 	or a, IEF_VBLANK
 	ldh [LOW(rIE)], a
 
-.LoadTiles
+.LoadTiles:
 	ld hl, _VRAM + $200
 	ld d, numOfTiles * 2
 	call Wait_VBlank
 	ld sp, Tiles
 	di
-.LoadLoop
+.LoadLoop:
 REPT 4
 	pop bc
 	ld a,c
@@ -136,11 +136,11 @@ ENDR
 	dec d
 	jp nz, .LoadLoop
 
-.ClearBGMap	
+.ClearBGMap:
 	ld e, d		;	ld de, $00
 	ld sp, _SCRN0 + $10+ $09 * $20
 	ld a, 5
-.CleanLoop
+.CleanLoop:
 REPT 5
 	push de
 ENDR
